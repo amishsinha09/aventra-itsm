@@ -1,0 +1,24 @@
+<!-- WinSW configuration: runs AventraITSM.exe as the "Aventra ITSM" Windows service -->
+<service>
+  <id>AventraITSM</id>
+  <name>Aventra ITSM</name>
+  <description>Aventra ITSM service desk web server</description>
+  <executable>%BASE%\AventraITSM.exe</executable>
+  <arguments>start</arguments>
+  <workingdirectory>%BASE%</workingdirectory>
+  <env name="ITSM_CONFIG" value="%ProgramData%\Aventra ITSM\config.env"/>
+  <env name="ITSM_APP_DIR" value="%BASE%"/>
+  <depend>AventraITSM-DB</depend>
+  <startmode>Automatic</startmode>
+  <delayedAutoStart>true</delayedAutoStart>
+  <stoptimeout>15 sec</stoptimeout>
+  <onfailure action="restart" delay="10 sec"/>
+  <onfailure action="restart" delay="30 sec"/>
+  <onfailure action="restart" delay="60 sec"/>
+  <resetfailure>1 hour</resetfailure>
+  <logpath>%ProgramData%\Aventra ITSM\logs</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>8</keepFiles>
+  </log>
+</service>

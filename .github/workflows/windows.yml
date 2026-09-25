@@ -1,0 +1,85 @@
+name: Windows installers
+# Builds both .exe installers on a real Windows machine and smoke-tests the server install.
+# Run manually (Actions → Windows installers → Run workflow) or push a tag like v1.0.0 to publish a release.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  server:
+    name: Server installer (AventraITSM-Server-Setup.exe)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Version
+        shell: bash
+        run: echo "ITSM_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+      - run: npm install --omit=dev
+      - name: Build payload (single-exe server, PostgreSQL, service wrapper)
+        run: node packaging/server/build.mjs
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+      - name: Compile installer
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAppVersion=$env:ITSM_VERSION packaging\server\AventraITSM-Server.iss'
+
+      # --- Smoke test: silent install, services up, first-run signup works, upgrade re-run works
+      - name: Silent install
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem dist\AventraITSM-Server-Setup-*.exe | Select-Object -First 1
+          Start-Process -Wait -FilePath $setup.FullName -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/LOG=install.log'
+          Get-Content install.log -Tail 30
+          Get-Content "C:\ProgramData\Aventra ITSM\logs\install.log" -ErrorAction SilentlyContinue
+          Get-Service AventraITSM, AventraITSM-DB | Format-Table -AutoSize
+      - name: Verify it serves
+        shell: pwsh
+        run: |
+          for ($i = 0; $i -lt 30; $i++) { try { $h = Invoke-RestMethod http://localhost:8080/api/health; if ($h.ok) { break } } catch { Start-Sleep 2 } }
+          if (-not $h.ok) { Get-ChildItem "C:\ProgramData\Aventra ITSM\logs" | ForEach-Object { Write-Host "== $_"; Get-Content $_.FullName -Tail 50 }; throw 'server not healthy' }
+          $st = Invoke-RestMethod http://localhost:8080/api/auth/status
+          if (-not $st.needsSetup) { throw 'expected a fresh server' }
+          $body = @{ organization = 'CI Org'; name = 'CI Admin'; email = 'ci@example.com'; password = 'CiPassword123' } | ConvertTo-Json
+          $r = Invoke-WebRequest -UseBasicParsing -Method Post -ContentType 'application/json' -Body $body http://localhost:8080/api/auth/signup
+          if ($r.StatusCode -ne 201) { throw "signup failed: $($r.StatusCode)" }
+          try { Invoke-WebRequest -UseBasicParsing -Method Post -ContentType 'application/json' -Body $body http://localhost:8080/api/auth/signup; throw 'second signup should be blocked' } catch { if ($_.Exception.Response.StatusCode.value__ -ne 403) { throw } }
+          Write-Host 'Server install verified'
+      - name: Upgrade in place (re-run installer)
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem dist\AventraITSM-Server-Setup-*.exe | Select-Object -First 1
+          Start-Process -Wait -FilePath $setup.FullName -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART'
+          for ($i = 0; $i -lt 30; $i++) { try { $h = Invoke-RestMethod http://localhost:8080/api/health; if ($h.ok) { break } } catch { Start-Sleep 2 } }
+          $st = Invoke-RestMethod http://localhost:8080/api/auth/status
+          if ($st.needsSetup) { throw 'data was lost on upgrade' }
+          Write-Host 'Upgrade kept data'
+      - uses: actions/upload-artifact@v4
+        with: { name: AventraITSM-Server-Setup, path: dist/AventraITSM-Server-Setup-*.exe }
+
+  desktop:
+    name: Desktop app (AventraServiceDesk-Setup.exe)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Build installer
+        working-directory: desktop
+        run: |
+          npm install
+          npm run dist
+      - uses: actions/upload-artifact@v4
+        with: { name: AventraServiceDesk-Setup, path: dist/AventraServiceDesk-Setup-*.exe }
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [server, desktop]
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: out, merge-multiple: true }
+      - uses: softprops/action-gh-release@v2
+        with: { files: out/*.exe }

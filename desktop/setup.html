@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; script-src 'self'">
+<title>Connect to your service desk</title>
+<style>
+  :root { color-scheme: light dark; --bg:#f9f9f7; --card:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --line:#c3c2b7; --accent:#2a78d6; --err:#d03b3b; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0d0d0d; --card:#1a1a19; --ink:#fff; --ink2:#c3c2b7; --line:#383835; --accent:#3987e5; } }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.5 system-ui,"Segoe UI",sans-serif; background:var(--bg); color:var(--ink); display:grid; place-items:center; height:100vh; }
+  form { width: 420px; background: var(--card); border:1px solid var(--line); border-radius:12px; padding:26px; }
+  .brand { display:flex; gap:10px; align-items:center; margin-bottom:14px; }
+  .brand img { width:36px; height:36px; }
+  h1 { font-size:18px; margin:0; }
+  p { color:var(--ink2); margin:6px 0 16px; }
+  label { font-size:12px; font-weight:600; color:var(--ink2); display:block; margin-bottom:4px; }
+  input { width:100%; padding:10px 12px; font:inherit; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); }
+  input:focus { outline:2px solid var(--accent); border-color:transparent; }
+  .hint { font-size:12px; color:var(--ink2); margin-top:6px; }
+  button { margin-top:18px; width:100%; padding:10px; border:0; border-radius:8px; background:var(--accent); color:#fff; font:inherit; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:wait; }
+  .err { color:var(--err); font-size:13px; margin-top:10px; min-height:18px; }
+</style>
+</head>
+<body>
+<form id="f" novalidate>
+  <div class="brand"><img src="icon.png" alt=""><h1>Aventra Service Desk</h1></div>
+  <p>Enter the address of your service desk. Your IT team or administrator can give you this.</p>
+  <label for="url">Service desk address</label>
+  <input id="url" name="url" placeholder="desk.yourcompany.com  or  http://itsm-server:8080" autocomplete="url" required autofocus>
+  <div class="hint">Cloud: https://desk.aventratech.org · On-prem: http://&lt;server-name&gt;:8080</div>
+  <div class="err" id="err" role="alert"></div>
+  <button type="submit" id="go">Connect</button>
+</form>
+<script src="setup.js"></script>
+</body>
+</html>

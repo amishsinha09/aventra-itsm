@@ -1,0 +1,61 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  # API test suite against real Postgres, once with node-postgres (production default)
+  # and once with the built-in zero-dependency driver.
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        driver: [pg, builtin]
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: devpass, POSTGRES_DB: itsm_test }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install --omit=dev
+      - run: npm test
+        env:
+          DB_DRIVER: ${{ matrix.driver }}
+          TEST_DATABASE_URL: postgres://postgres:devpass@localhost:5432/itsm_test
+
+  # Build the production image, boot it against Postgres, seed demo data,
+  # and drive the real UI end to end with Playwright.
+  docker-e2e:
+    runs-on: ubuntu-latest
+    needs: test
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: devpass, POSTGRES_DB: itsm }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t aventra-itsm:ci .
+      - name: Start container
+        run: |
+          docker run -d --name itsm --network host \
+            -e DATABASE_URL=postgres://postgres:devpass@localhost:5432/itsm \
+            -e JWT_SECRET=ci-secret-ci-secret-ci-secret-ci-secret-1234 \
+            -e APP_URL=http://localhost:3000 -e NODE_ENV=development \
+            aventra-itsm:ci
+          for i in $(seq 1 30); do curl -fs http://localhost:3000/api/health && break; sleep 2; done
+          docker logs itsm
+          docker exec itsm node src/db/seed.js
+          docker inspect --format '{{.State.Health.Status}}' itsm || true
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install && npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+        env: { BASE_URL: "http://localhost:3000" }
+      - if: failure()
+        run: docker logs itsm

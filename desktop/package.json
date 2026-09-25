@@ -1,0 +1,34 @@
+{
+  "name": "aventra-service-desk",
+  "productName": "Aventra Service Desk",
+  "version": "1.0.0",
+  "description": "Desktop app for Aventra ITSM technicians and requesters",
+  "author": "Aventra Tech",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "org.aventratech.itsm.desktop",
+    "productName": "Aventra Service Desk",
+    "copyright": "© Aventra Tech",
+    "directories": { "output": "../dist", "buildResources": "build" },
+    "files": ["main.js", "preload-setup.js", "setup.html", "setup.js", "icon.png", "tray.png", "package.json"],
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "icon": "build/icon.ico" },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Aventra Service Desk",
+      "artifactName": "AventraServiceDesk-Setup-${version}.exe"
+    }
+  }
+}
