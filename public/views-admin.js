@@ -1,7 +1,10 @@
 import { fresh, html, raw, get, post, patch, put, del, on, toast, fail, modal, label, timeAgo, dt, options, esc } from './lib.js';
 import { state, lookup } from './app.js';
+import { billingTab } from './views-billing.js';
+import { accessTab } from './views-access.js';
 
-const TABS = [['users', 'Users'], ['groups', 'Groups'], ['companies', 'Companies'], ['sla', 'SLA policies'], ['catalog', 'Catalog'], ['integrations', 'Integrations'], ['workspace', 'Workspace'], ['audit', 'Audit log']];
+const SOURCE = { local: 'Local', ldap: 'Active Directory', entra: 'Microsoft' };
+const TABS = [['billing', 'Billing'], ['users', 'Users'], ['access', 'Sign-in & access'], ['groups', 'Groups'], ['companies', 'Companies'], ['sla', 'SLA policies'], ['catalog', 'Catalog'], ['integrations', 'Integrations'], ['workspace', 'Workspace'], ['audit', 'Audit log']];
 
 export async function adminView(el, tab = 'users') {
   if (!TABS.some(([k]) => k === tab)) tab = 'users';
@@ -9,29 +12,37 @@ export async function adminView(el, tab = 'users') {
     <nav class="tabs">${TABS.map(([k, t]) => html`<a href="#/admin/${k}" class="${k === tab ? 'on' : ''}">${t}</a>`)}</nav><div id="tab"></div>`);
   const box = el.querySelector('#tab');
   const reload = () => { state.cache = {}; adminView(fresh(el), tab); };
-  await ({ users, groups, companies, sla, catalog, integrations, workspace, audit })[tab](box, reload);
+  await ({ billing: billingTab, access: accessTab, users, groups, companies, sla, catalog, integrations, workspace, audit })[tab](box, reload);
 }
 
 async function users(box, reload) {
   const [list, companies, groups] = await Promise.all([get('/api/users'), lookup('companies'), lookup('groups')]);
   box.innerHTML = String(html`<div class="card-head"><span class="muted">${list.length} users · agents work tickets, requesters use the portal.</span><button class="btn primary" data-act="add">Add user</button></div>
-    <div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Company</th><th>Last sign-in</th><th>Status</th><th></th></tr></thead><tbody>
-    ${list.map((u) => html`<tr><td><strong>${u.name}</strong></td><td>${u.email}</td><td>${label(u.role)}</td><td>${u.company_name || '—'}</td><td class="small muted">${u.last_login_at ? timeAgo(u.last_login_at) : 'Never'}</td>
-      <td>${u.active ? html`<span class="badge st-done">Active</span>` : html`<span class="badge st-closed">Disabled</span>`}</td><td><button class="btn sm" data-edit="${u.id}">Edit</button></td></tr>`)}</tbody></table></div>`);
+    <div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Sign-in</th><th>Company</th><th>Last sign-in</th><th>Status</th><th></th></tr></thead><tbody>
+    ${list.map((u) => html`<tr><td><strong>${u.name}</strong></td><td>${u.email}</td><td>${label(u.role)}</td><td>${SOURCE[u.auth_source] || 'Local'}</td><td>${u.company_name || '—'}</td>
+      <td class="small muted">${u.last_login_at ? timeAgo(u.last_login_at) : u.invited_at ? html`Invited ${timeAgo(u.invited_at)}` : 'Never'}</td>
+      <td>${u.active ? html`<span class="badge st-done">Active</span>` : html`<span class="badge st-closed">Disabled</span>`}</td>
+      <td class="nowrap"><button class="btn sm" data-edit="${u.id}">Edit</button>${u.active && !u.last_login_at ? html` <button class="btn sm" data-invite="${u.id}">${u.invited_at ? 'Resend invite' : 'Invite'}</button>` : ''}</td></tr>`)}</tbody></table></div>`);
   const form = (u = {}) => html`<div class="field"><label>Name</label><input name="name" value="${u.name || ''}" required></div>
     ${u.id ? '' : html`<div class="field"><label>Email</label><input name="email" type="email" required></div>`}
     <div class="grid g2"><div class="field"><label>Role</label><select name="role">${options([['agent', 'Agent'], ['admin', 'Admin'], ['requester', 'Requester (portal only)']], u.role || 'agent')}</select></div>
     <div class="field"><label>Company</label><select name="company_id" data-type="int">${options(companies, u.company_id, { blank: '— none —' })}</select></div></div>
     ${u.id ? html`<label class="check field"><input type="checkbox" name="active" ${u.active ? raw('checked') : ''}> Active</label>` : html`<div class="field"><label>Groups</label>${groups.map((g) => html`<label class="check"><input type="checkbox" name="g_${g.id}"> ${g.name}</label>`)}</div>`}
-    <div class="field"><label>${u.id ? 'Reset password (optional)' : 'Password'}</label><input name="password" type="password" autocomplete="new-password"><div class="hint">${u.id ? 'Leave blank to keep the current password.' : 'Leave blank for users who only email in (they can be given one later).'}</div></div>`;
+    ${u.id ? (u.auth_source && u.auth_source !== 'local' ? html`<p class="small muted">Signs in with ${SOURCE[u.auth_source]}. Their role is updated from directory groups at each sign-in.</p>` : html`<div class="field"><label>Reset password (optional)</label><input name="password" type="password" autocomplete="new-password"><div class="hint">Leave blank to keep the current password.</div></div>`)
+    : html`<label class="check field"><input type="checkbox" name="invite" checked> Email an invitation (sign-in link${' '}and "set your password" button)</label>
+      <details class="field"><summary class="small">Or set a password yourself</summary><input name="password" type="password" autocomplete="new-password" style="margin-top:8px"><div class="hint">If you set one, no invitation is needed. Share it securely.</div></details>`}`;
   on(box, 'click', '[data-act=add]', async () => {
     const r = await modal({ title: 'Add user', body: form(), submit: 'Create', onSubmit: (d) => {
       const group_ids = Object.keys(d).filter((k) => k.startsWith('g_') && d[k]).map((k) => +k.slice(2));
-      const body = { name: d.name, email: d.email, role: d.role, company_id: d.company_id, group_ids };
+      const body = { name: d.name, email: d.email, role: d.role, company_id: d.company_id, group_ids, invite: d.invite };
       if (d.password) body.password = d.password;
       return post('/api/users', body);
     } });
-    if (r) { toast(`${r.name} added`); reload(); }
+    if (r) { toast(r.invite ? `${r.name} added and invited` : `${r.name} added`); reload(); }
+  });
+  on(box, 'click', '[data-invite]', async (b) => {
+    b.disabled = true;
+    try { const r = await post(`/api/users/${b.dataset.invite}/invite`); toast(r.method === 'directory' ? 'Invitation sent (they sign in with their work account)' : 'Invitation sent'); reload(); } catch (e) { fail(e); b.disabled = false; }
   });
   on(box, 'click', '[data-edit]', async (b) => {
     const u = list.find((x) => x.id === +b.dataset.edit);

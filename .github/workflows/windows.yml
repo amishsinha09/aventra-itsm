@@ -73,13 +73,35 @@ jobs:
       - uses: actions/upload-artifact@v4
         with: { name: AventraServiceDesk-Setup, path: dist/AventraServiceDesk-Setup-*.exe }
 
+  # Tag push (v1.2.3): publish both installers to the PUBLIC downloads repo so aventratech.org can link to them.
+  # Fixed file names make these links always point at the newest version:
+  #   https://github.com/<owner>/aventra-downloads/releases/latest/download/AventraITSM-Server-Setup.exe
+  #   https://github.com/<owner>/aventra-downloads/releases/latest/download/AventraServiceDesk-Setup.exe
+  # Setup once: create the public repo, then add a repo secret DOWNLOADS_TOKEN (fine-grained token with
+  # Contents: read & write on that repo). Optional repo variable DOWNLOADS_REPO overrides the target.
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [server, desktop]
     runs-on: ubuntu-latest
-    permissions: { contents: write }
     steps:
       - uses: actions/download-artifact@v4
         with: { path: out, merge-multiple: true }
+      - name: Stable names + checksums
+        run: |
+          cd out
+          cp AventraITSM-Server-Setup-*.exe AventraITSM-Server-Setup.exe
+          cp AventraServiceDesk-Setup-*.exe AventraServiceDesk-Setup.exe
+          sha256sum *.exe > SHA256SUMS.txt
+          cat SHA256SUMS.txt
       - uses: softprops/action-gh-release@v2
-        with: { files: out/*.exe }
+        with:
+          repository: ${{ vars.DOWNLOADS_REPO || format('{0}/aventra-downloads', github.repository_owner) }}
+          token: ${{ secrets.DOWNLOADS_TOKEN }}
+          tag_name: ${{ github.ref_name }}
+          name: Aventra ITSM ${{ github.ref_name }}
+          make_latest: true
+          body: |
+            **Aventra ITSM Server** — on-prem installer for Windows Server 2019+/Windows 10+ (includes PostgreSQL). 30-day trial; activate a license in Settings → Billing.
+            **Aventra Service Desk** — desktop app for technicians and requesters (connects to cloud or on-prem).
+            Verify downloads with SHA256SUMS.txt.
+          files: out/*

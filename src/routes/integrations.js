@@ -6,6 +6,7 @@ import { tx, one, many } from '../db/index.js';
 import { bad } from '../lib/http.js';
 import { validate, str, oneOf, arr, obj } from '../lib/validate.js';
 import { integrationOnly, audit } from '../lib/auth.js';
+import { requireFeature } from '../lib/plans.js';
 import { createTicket, updateTicket, addComment, getTicket, later } from '../lib/tickets.js';
 import { upsertDiscoveredCI } from './cmdb.js';
 import { notifyGroup } from '../lib/notify.js';
@@ -20,7 +21,7 @@ const eventSchema = {
 };
 
 export default function (r) {
-  r.post('/api/integrations/aventra/events', integrationOnly, async (req) => {
+  r.post('/api/integrations/aventra/events', integrationOnly, requireFeature('aventra'), async (req) => {
     const e = validate(eventSchema, req.body);
     const actor = { ...req.user, name: 'Aventra Agent' };
     const result = await tx(async (d) => {
@@ -87,7 +88,7 @@ export default function (r) {
     return { action: result.action, ticket: result.ticket && { id: result.ticket.id, number: result.ticket.number, status: result.ticket.status, priority: result.ticket.priority } };
   });
 
-  r.post('/api/integrations/aventra/inventory', integrationOnly, async (req) => {
+  r.post('/api/integrations/aventra/inventory', integrationOnly, requireFeature('aventra'), async (req) => {
     const b = validate({ devices: arr(obj({ maxBytes: 5000 }), { required: true, max: 1000 }) }, req.body);
     const out = await tx(async (d) => {
       const res = [];

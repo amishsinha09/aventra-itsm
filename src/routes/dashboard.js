@@ -1,5 +1,6 @@
 import { one, many, q } from '../db/index.js';
 import { isStaff, staffOnly } from '../lib/auth.js';
+import { requireFeature } from '../lib/plans.js';
 
 async function tzFor(user) {
   const r = await one('SELECT coalesce(u.timezone, t.timezone) AS tz FROM users u JOIN tenants t ON t.id = u.tenant_id WHERE u.id = $1', [user.id]);
@@ -66,7 +67,7 @@ export default function (r) {
   });
 
   // MSP / management reporting: per-customer and per-agent scorecards over a period.
-  r.get('/api/reports', staffOnly, async (req) => {
+  r.get('/api/reports', staffOnly, requireFeature('reports'), async (req) => {
     const t = req.user.tenant_id;
     const days = [7, 30, 90, 365].includes(+req.query.days) ? +req.query.days : 30;
     const tz = await tzFor(req.user);

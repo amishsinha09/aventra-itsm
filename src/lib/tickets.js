@@ -7,6 +7,7 @@ import { heuristicTriage, triage, aiEnabled } from './ai.js';
 import { notifyUsers, notifyGroup, majorIncidentAlert } from './notify.js';
 import { db as rootDb } from '../db/index.js';
 import { isStaff } from './auth.js';
+import { assertFeature, billingFor } from './plans.js';
 
 export const TICKET_SELECT = `
   SELECT t.*, r.name AS requester_name, r.email AS requester_email, a.name AS assignee_name, g.name AS group_name,
@@ -61,6 +62,8 @@ export async function createTicket(db, actor, input) {
   const type = input.type;
   if (!LIFECYCLE[type]) throw bad('Invalid ticket type');
   if (!staff && !['incident', 'request'].includes(type)) throw forbidden('Requesters can only raise incidents and requests');
+  if (type === 'problem') await assertFeature(tenantId, 'problems');
+  if (type === 'change') await assertFeature(tenantId, 'changes');
 
   const data = { ...input };
   if (!staff) {
@@ -139,7 +142,8 @@ export async function createTicket(db, actor, input) {
   if (full.assignee_id) later(db, () => notifyUsers(tenantId, [full.assignee_id], full, 'assigned', `${full.number} assigned to you`));
   else if (full.group_id) later(db, () => notifyGroup(tenantId, full.group_id, full, 'new', msg));
   if (full.priority === 1 && type === 'incident') later(db, () => majorIncidentAlert(full));
-  if (aiEnabled()) later(db, () => enrichWithAI(tenantId, full.id, staff));
+  // Claude enrichment is a Pro feature (and costs money per call)
+  if (aiEnabled() && (await billingFor(tenantId)).features.includes('ai')) later(db, () => enrichWithAI(tenantId, full.id, staff));
   return full;
 }
 

@@ -20,16 +20,27 @@ async function afterAuth() {
 export function loginView(app) {
   app.innerHTML = String(html`<div class="auth">${hero}<div class="auth-form"><form class="card" id="f" novalidate>
     <h1>Sign in</h1><p class="muted" style="margin:4px 0 20px">Welcome back to your service desk.</p>
-    <div class="field"><label for="email">Work email</label><input id="email" name="email" type="email" autocomplete="username" required></div>
+    <a class="btn ms-btn hidden" id="msBtn" href="/api/auth/sso/microsoft/start"><svg viewBox="0 0 21 21" width="18" height="18" aria-hidden="true"><path fill="#f25022" d="M1 1h9v9H1z"/><path fill="#7fba00" d="M11 1h9v9h-9z"/><path fill="#00a4ef" d="M1 11h9v9H1z"/><path fill="#ffb900" d="M11 11h9v9h-9z"/></svg>Sign in with Microsoft</a>
+    <div class="or hidden" id="msOr"><span>or</span></div>
+    <div class="notice bad hidden" id="ssoError" role="alert"></div>
+    <div class="field"><label for="email" id="emailLabel">Work email</label><input id="email" name="email" type="text" autocomplete="username" required></div>
     <div class="field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required></div>
     <div class="field hidden" id="wsField"><label for="workspace">Workspace</label><input id="workspace" name="workspace" placeholder="e.g. northwind"></div>
     <button class="btn primary" style="width:100%;justify-content:center" type="submit">Sign in</button>
     <p class="small" style="text-align:center;margin-top:12px"><a href="#/forgot">Forgot password?</a></p>
     <p class="small muted" id="signupHint" style="text-align:center;margin-top:8px">New to Aventra? <a href="#/signup">Create a workspace</a></p>
   </form></div></div>`);
+  const err = new URLSearchParams(location.hash.split('?')[1] || '').get('error');
+  if (err) { const n = app.querySelector('#ssoError'); n.textContent = err; n.classList.remove('hidden'); }
   get('/api/auth/status').then((st) => {
     if (st.needsSetup && st.signupOpen) { location.hash = '#/signup'; return; }
     if (!st.signupOpen) app.querySelector('#signupHint')?.remove();
+    if (st.microsoft) { app.querySelector('#msBtn').classList.remove('hidden'); app.querySelector('#msOr').classList.remove('hidden'); }
+    if (st.activeDirectory) {
+      app.querySelector('#emailLabel').textContent = 'Windows username or email';
+      app.querySelector('#email').placeholder = 'jdoe or jdoe@company.com';
+      app.querySelector('#email').insertAdjacentHTML('afterend', '<div class="hint">Use your normal Windows sign-in.</div>');
+    }
   }).catch(() => {});
   const f = app.querySelector('#f');
   f.addEventListener('submit', async (e) => {
@@ -45,7 +56,7 @@ export function loginView(app) {
 
 export function signupView(app) {
   app.innerHTML = String(html`<div class="auth">${hero}<div class="auth-form"><form class="card" id="f" novalidate>
-    <h1>Create your workspace</h1><p class="muted" style="margin:4px 0 20px">Set up in under a minute. Default SLAs, groups and a service catalog are created for you.</p>
+    <h1>Create your workspace</h1><p class="muted" style="margin:4px 0 20px"><strong>14-day free trial of Pro — no credit card.</strong> Default SLAs, groups and a service catalog are set up for you. <a href="#/pricing">See pricing</a></p>
     <div class="field"><label for="organization">Organization</label><input id="organization" name="organization" required></div>
     <div class="field"><label for="name">Your name</label><input id="name" name="name" autocomplete="name" required></div>
     <div class="field"><label for="email">Work email</label><input id="email" name="email" type="email" autocomplete="email" required></div>
@@ -83,9 +94,10 @@ export function forgotView(app) {
 }
 
 export function resetView(app) {
-  const token = new URLSearchParams(location.hash.split('?')[1] || '').get('token') || '';
+  const qs = new URLSearchParams(location.hash.split('?')[1] || '');
+  const token = qs.get('token') || ''; const invite = qs.get('invite') === '1';
   app.innerHTML = String(html`<div class="auth">${hero}<div class="auth-form"><form class="card" id="f" novalidate>
-    <h1>Choose a new password</h1><p class="muted" style="margin:4px 0 20px">At least 10 characters with letters and numbers.</p>
+    <h1>${invite ? 'Welcome! Choose your password' : 'Choose a new password'}</h1><p class="muted" style="margin:4px 0 20px">At least 10 characters with letters and numbers.</p>
     <div class="field"><label for="password">New password</label><input id="password" name="password" type="password" autocomplete="new-password" required></div>
     <button class="btn primary" style="width:100%;justify-content:center" type="submit">Set password & sign in</button></form></div></div>`);
   const f = app.querySelector('#f');

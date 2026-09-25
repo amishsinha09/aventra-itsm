@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Aventra ITSM — Service management with self-healing built in | Aventra Tech</title>
+<meta name="description" content="Aventra ITSM: incident, request, problem, change, CMDB and knowledge management for MSPs and IT teams, with self-healing automation. Download for Windows or run in the cloud."/>
+<meta property="og:title" content="Aventra ITSM — ITSM that fixes things before your users notice"/>
+<meta property="og:description" content="Incidents, requests, problems, changes, CMDB and knowledge, connected to Aventra's self-healing agent. Per-technician pricing; end users are free."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#0d1117;--ink2:#1c2433;--ink3:#2d3a4a;
+  --mist:#f4f5f7;--mist2:#eaecf0;--mist3:#dde0e6;
+  --sky:#1a56db;--sky2:#1145b8;--sky-soft:#eff4ff;
+  --teal:#0d9488;--teal-soft:#f0fdfa;
+  --amber:#b45309;--amber-soft:#fffbeb;
+  --green:#15803d;--green-soft:#f0fdf4;
+  --text:#1c2433;--muted:#5a6a7e;--subtle:#8494a7;--white:#ffffff;
+  --r-sm:6px;--r-md:10px;--r-lg:16px;--r-xl:22px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.05);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.10),0 4px 12px rgba(0,0,0,.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:'DM Sans',sans-serif;color:var(--text);background:var(--white);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.container{max-width:1140px;margin:0 auto;padding:0 28px}
+h1,h2,h3{font-family:'Instrument Serif',Georgia,serif;line-height:1.15;letter-spacing:-.02em;font-weight:400}
+h1{font-size:clamp(38px,5.5vw,66px)}
+h2{font-size:clamp(28px,3.5vw,44px)}
+h1 em,h2 em{font-style:italic;color:var(--sky)}
+.lead{font-size:clamp(16px,1.5vw,19px);color:var(--muted);font-weight:300;line-height:1.8}
+.eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--sky);margin-bottom:14px}
+.mono{font-family:'DM Mono',monospace}
+code{font-family:'DM Mono',monospace;font-size:12.5px;background:var(--mist);padding:1px 6px;border-radius:5px;color:var(--ink2)}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 22px;border-radius:var(--r-md);font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;border:none;transition:all .18s ease;text-decoration:none;white-space:nowrap}
+.btn-primary{background:var(--sky);color:#fff}
+.btn-primary:hover{background:var(--sky2);transform:translateY(-1px);box-shadow:0 6px 18px rgba(26,86,219,.28)}
+.btn-outline{background:#fff;color:var(--ink2);border:1.5px solid var(--mist3)}
+.btn-outline:hover{border-color:var(--sky);color:var(--sky)}
+.btn-ghost{background:transparent;color:var(--muted);font-weight:500}
+.btn-ghost:hover{color:var(--ink)}
+.btn-white{background:#fff;color:var(--sky)}
+.btn-white:hover{transform:translateY(-1px)}
+.btn-sm{padding:8px 16px;font-size:13px}
+.btn-lg{padding:14px 28px;font-size:15px;border-radius:var(--r-lg)}
+.btn-block{width:100%}
+
+/* nav (same as the homepage) */
+.nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(255,255,255,.94);backdrop-filter:blur(18px);border-bottom:1px solid var(--mist3);height:66px;display:flex;align-items:center}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%}
+.brand{display:flex;align-items:center;gap:11px}
+.logo-mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--sky) 0%,#3b6fd4 100%);position:relative;flex-shrink:0}
+.logo-mark::after{content:'A';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Instrument Serif',serif;font-size:18px}
+.brand-name{font-family:'Instrument Serif',serif;font-size:17px;letter-spacing:-.01em;color:var(--ink);line-height:1.1}
+.brand-sub{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--subtle)}
+.nav-links{display:flex;align-items:center;gap:4px}
+.nav-links a{font-size:14px;font-weight:500;color:var(--muted);padding:6px 12px;border-radius:var(--r-sm);transition:all .15s}
+.nav-links a:hover,.nav-links a[aria-current="page"]{color:var(--sky);background:var(--sky-soft)}
+.nav-cta{display:flex;gap:8px;align-items:center}
+.nav-toggle{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;background:none;border:0}
+.nav-toggle span{width:22px;height:2px;background:var(--ink);border-radius:2px}
+@media(max-width:900px){
+  .nav-links{display:none}
+  .nav-toggle{display:flex}
+  .nav-links.open{display:flex;flex-direction:column;align-items:stretch;position:fixed;top:66px;left:0;right:0;background:#fff;border-bottom:1px solid var(--mist3);padding:16px 28px 24px;gap:4px;box-shadow:var(--shadow-md)}
+}
+@media(max-width:520px){.nav-cta .btn-ghost{display:none}}
+
+/* hero */
+.hero{padding:140px 0 80px;background:linear-gradient(170deg,var(--white) 0%,var(--mist) 100%)}
+.hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:56px;align-items:center}
+.hero h1{margin-bottom:20px}
+.hero .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:30px}
+.hero .fine{margin-top:14px;font-size:13px;color:var(--subtle)}
+.panel{background:var(--ink);color:#fff;border-radius:var(--r-xl);padding:30px;box-shadow:var(--shadow-lg)}
+.panel h3{font-size:22px;margin-bottom:6px}
+.panel .sub{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:14px}
+.tick{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-top:1px solid rgba(255,255,255,.1);font-size:14px;color:rgba(255,255,255,.78)}
+.tick b{font-family:'DM Mono',monospace;font-weight:500;font-size:11px;color:#5eead4;background:rgba(94,234,212,.1);border-radius:5px;padding:2px 7px;flex-shrink:0;margin-top:2px}
+
+/* sections */
+.section{padding:88px 0}
+.section.alt{background:var(--mist)}
+.section-head{max-width:720px;margin-bottom:40px}
+.section-head.center{margin-left:auto;margin-right:auto;text-align:center}
+.section-head p{color:var(--muted);margin-top:12px;font-size:17px;font-weight:300;line-height:1.8}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.card{background:#fff;border:1px solid var(--mist3);border-radius:var(--r-lg);padding:26px;transition:box-shadow .2s,transform .2s}
+.card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.card .ico{width:40px;height:40px;border-radius:10px;background:var(--sky-soft);display:grid;place-items:center;margin-bottom:14px}
+.card .ico svg{width:21px;height:21px;stroke:var(--sky);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.card h3{font-size:20px;margin-bottom:8px}
+.card p{font-size:14px;color:var(--muted);line-height:1.7}
+.pill{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:100px;background:var(--teal-soft);color:var(--teal);margin-left:6px;vertical-align:3px;font-family:'DM Sans',sans-serif}
+
+/* self-healing flow */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--mist3);border:1px solid var(--mist3);border-radius:var(--r-lg);overflow:hidden}
+.step{background:#fff;padding:26px}
+.step b{display:block;color:var(--sky);font:500 12px 'DM Mono',monospace;margin-bottom:10px;letter-spacing:.04em}
+.step h3{font-size:20px;margin-bottom:6px}
+.step p{font-size:14px;color:var(--muted);line-height:1.65}
+
+/* pricing */
+.toggle{display:inline-flex;border:1px solid var(--mist3);border-radius:var(--r-md);background:#fff;overflow:hidden;margin-top:22px}
+.toggle button{border:0;background:transparent;padding:9px 18px;font:600 13px 'DM Sans',sans-serif;color:var(--muted);cursor:pointer}
+.toggle button[aria-pressed="true"]{background:var(--sky-soft);color:var(--sky)}
+.save{background:var(--green-soft);color:var(--green);font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px;margin-left:6px}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:stretch}
+.plan{background:#fff;border:1px solid var(--mist3);border-radius:var(--r-xl);padding:28px;display:flex;flex-direction:column;position:relative}
+.plan.rec{border:2px solid var(--sky);box-shadow:var(--shadow-lg)}
+.plan .popular{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sky);background:var(--sky-soft);border-radius:100px;padding:3px 10px;display:inline-block;margin-bottom:12px;width:fit-content}
+.plan h3{font-size:24px}
+.plan .who{font-size:13px;color:var(--muted);margin:4px 0 18px}
+.plan .price{font-size:40px;font-weight:700;color:var(--ink);letter-spacing:-.02em;line-height:1}
+.plan .price small{font-size:13px;font-weight:400;color:var(--muted);letter-spacing:0}
+.plan .billed{font-size:12px;color:var(--subtle);margin-top:8px;min-height:18px}
+.plan .btn{margin:22px 0}
+.plan ul{list-style:none;display:grid;gap:9px;margin-top:auto}
+.plan li{font-size:13.5px;color:var(--muted);display:flex;gap:8px;line-height:1.45}
+.plan li::before{content:'✓';color:var(--teal);font-weight:700;flex-shrink:0}
+.price-foot{text-align:center;font-size:12.5px;color:var(--subtle);margin-top:18px}
+.compare{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--mist3);border-radius:var(--r-lg);overflow:hidden;margin-top:44px}
+.compare th,.compare td{padding:12px 18px;text-align:left;border-bottom:1px solid var(--mist2);font-size:14px}
+.compare th{background:var(--mist);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--subtle);font-weight:600}
+.compare tr:last-child td{border-bottom:0}
+.compare .y{color:var(--teal);font-weight:700}
+.compare .n{color:var(--subtle)}
+.scroll{overflow-x:auto}
+
+/* downloads */
+.dl-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.dl{background:#fff;border:1px solid var(--mist3);border-radius:var(--r-xl);padding:30px;display:flex;flex-direction:column}
+.dl.main{border:2px solid var(--sky)}
+.dl h3{font-size:26px;margin:14px 0 4px}
+.dl .for{color:var(--muted);font-size:14px;margin-bottom:18px}
+.dl ul{list-style:none;display:grid;gap:9px;margin-bottom:24px}
+.dl li{font-size:14px;color:var(--muted);display:flex;gap:9px;line-height:1.5}
+.dl li::before{content:'✓';color:var(--teal);font-weight:700;flex-shrink:0}
+.dl .bottom{margin-top:auto}
+.dl .meta{font:12px 'DM Mono',monospace;color:var(--subtle);margin-top:10px;text-align:center}
+.dl .ico{width:46px;height:46px;border-radius:12px;background:var(--sky-soft);display:grid;place-items:center}
+.dl .ico svg{width:24px;height:24px;stroke:var(--sky);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.btn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:40px}
+.steps h4{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:8px}
+.steps ol,.steps ul{padding-left:18px;display:grid;gap:6px;font-size:14px;color:var(--muted)}
+.note{margin-top:28px;padding:14px 18px;border-left:3px solid var(--amber);background:var(--amber-soft);font-size:13.5px;color:var(--ink3);border-radius:0 var(--r-md) var(--r-md) 0}
+.note a{color:var(--sky);text-decoration:underline}
+
+/* faq */
+.faq{max-width:800px;margin:0 auto}
+.faq details{border-bottom:1px solid var(--mist3);padding:18px 0}
+.faq summary{cursor:pointer;font-weight:600;color:var(--ink);font-size:16px;list-style:none;display:flex;justify-content:space-between;gap:16px}
+.faq summary::after{content:'+';color:var(--sky);font-size:20px;line-height:1}
+.faq details[open] summary::after{content:'–'}
+.faq p{color:var(--muted);margin-top:10px;font-size:15px;line-height:1.75}
+
+/* cta + footer */
+.cta{padding:80px 0;text-align:center;background:linear-gradient(135deg,var(--sky),#1a3fa8);color:#fff}
+.cta h2{color:#fff}
+.cta p{color:rgba(255,255,255,.75);margin:12px auto 28px;max-width:620px}
+.cta .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.cta .btn-outline{background:transparent;color:#fff;border-color:rgba(255,255,255,.45)}
+.footer{background:var(--ink);color:rgba(255,255,255,.55);padding:34px 0}
+.footer-inner{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-size:13px}
+.footer a{color:rgba(255,255,255,.75)}
+.footer a:hover{color:#fff}
+.footer .links{display:flex;gap:18px;flex-wrap:wrap}
+
+@media(max-width:900px){
+  .hero-grid,.grid3,.plans,.dl-grid,.steps{grid-template-columns:1fr}
+  .flow{grid-template-columns:1fr 1fr}
+  .hero{padding-top:110px}
+}
+@media(max-width:560px){.flow{grid-template-columns:1fr}.section{padding:64px 0}}
+</style>
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="/" aria-label="Aventra home">
+      <div class="logo-mark"></div>
+      <div><div class="brand-name">Aventra</div><div class="brand-sub">Self-Healing IT</div></div>
+    </a>
+    <nav class="nav-links" id="nav-links" aria-label="Primary navigation">
+      <a href="/#how">How it works</a>
+      <a href="/#platform">Platform</a>
+      <a href="/#ai-studio">AI Studio</a>
+      <a href="/managed-services.html">Managed Services</a>
+      <a href="/itsm.html" aria-current="page">ITSM</a>
+      <a href="/#pricing">Pricing</a>
+      <a href="/demo.html">Demo</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="/console.html" class="btn btn-ghost btn-sm">Log In</a>
+      <a href="#download" class="btn btn-primary btn-sm">Download ITSM</a>
+    </div>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-controls="nav-links" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <div class="eyebrow">Aventra ITSM · IT service management</div>
+      <h1>ITSM that <em>fixes things</em> before your users notice</h1>
+      <p class="lead">Incidents, requests, problems, changes, CMDB and knowledge in one fast service desk, connected to Aventra's self-healing agent so routine issues open, fix and close themselves.</p>
+      <div class="actions">
+        <a href="#download" class="btn btn-primary btn-lg">⬇ Download free trial</a>
+        <a href="#pricing" class="btn btn-outline btn-lg">See pricing</a>
+      </div>
+      <p class="fine">Windows installer · 30-day free trial · No credit card · Requesters are always free</p>
+    </div>
+    <div class="panel" aria-label="Example: a self-healed incident">
+      <h3>INC0001042 · resolved in 3 minutes</h3>
+      <p class="sub">Disk space critically low on ACME-LT-0142</p>
+      <div class="tick"><b>09:14</b><span>Aventra agent detects C: at 97% and opens the incident, linked to the device in the CMDB</span></div>
+      <div class="tick"><b>09:14</b><span>Self-healing playbook <code>disk-cleanup</code> starts and logs each step on the ticket</span></div>
+      <div class="tick"><b>09:17</b><span>21 GB freed. Incident resolved as <em>auto-remediated</em>, and the requester is notified</span></div>
+      <div class="tick"><b>0</b><span>technician minutes spent</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FEATURES ═══ -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Everything IT runs on</div>
+      <h2>The ITIL processes your team <em>uses every day</em></h2>
+      <p>Set up in minutes, not months, with no implementation partner required. Built for MSPs and mid-size IT teams.</p>
+    </div>
+    <div class="grid3">
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/></svg></div><h3>Incident management</h3><p>Impact × urgency priority, auto-routing, SLA timers that pause on hold, and major-incident alerts to Slack or Teams.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 7h18M6 7v12h12V7M9 7V4h6v3"/></svg></div><h3>Service catalog</h3><p>Order forms for hardware, software and access, with approvals and fulfilment teams built in.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M11 8v3l2 2"/></svg></div><h3>Problem management <span class="pill">Pro</span></h3><p>Track root causes and workarounds. Resolving a problem resolves every linked incident.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M4 7h11M4 7l3-3M4 7l3 3M20 17H9m11 0-3-3m3 3-3 3"/></svg></div><h3>Change management <span class="pill">Pro</span></h3><p>Automatic risk scoring, CAB approvals, standard changes, and conflict detection on the same system.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/></svg></div><h3>CMDB &amp; impact <span class="pill">Pro</span></h3><p>Every device, app and service per customer, with dependencies, so you can see what breaks when one goes down.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M9 10h6M9 14h6"/></svg></div><h3>Knowledge base</h3><p>Articles suggested while users type, plus one-click articles drafted from resolved tickets.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"/><circle cx="12" cy="12" r="3"/></svg></div><h3>AI assist <span class="pill">Pro</span></h3><p>Automatic triage, suggested fixes from similar tickets, and draft replies your technicians can send in one click.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 17.3 6.2 20.5l1.1-6.5L2.6 9.4l6.5-.9L12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5z"/></svg></div><h3>CSAT &amp; reports</h3><p>Satisfaction surveys on every resolved ticket, with scorecards per customer and per technician.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg></div><h3>Built for MSPs</h3><p>One workspace, many customer companies, a self-service portal for their users, and email-to-ticket.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SELF-HEALING ═══ -->
+<section class="section alt" id="self-healing">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Only with Aventra</div>
+      <h2>Tickets that <em>close themselves</em></h2>
+      <p>The Aventra agent watches every endpoint. When it spots a known issue, the whole ticket lifecycle happens on its own, and your technicians only see what actually needs a person.</p>
+    </div>
+    <div class="flow">
+      <div class="step"><b>01 · DETECT</b><h3>Spot it</h3><p>The agent notices low disk space, a stopped service, a hung update and more.</p></div>
+      <div class="step"><b>02 · OPEN</b><h3>Log it</h3><p>An incident is created and linked to the device in the CMDB. Duplicate alerts are merged.</p></div>
+      <div class="step"><b>03 · FIX</b><h3>Heal it</h3><p>The matching playbook runs automatically, with every step recorded on the ticket.</p></div>
+      <div class="step"><b>04 · CLOSE</b><h3>Or escalate</h3><p>Fixed issues are resolved as auto-remediated. Anything else goes straight to the right team, flagged urgent.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PRICING ═══ -->
+<section class="section" id="pricing">
+  <div class="container">
+    <div class="section-head center">
+      <div class="eyebrow">Pricing</div>
+      <h2>Simple <em>per-technician</em> pricing</h2>
+      <p>Pay for the people who work tickets. Everyone who raises them is free.</p>
+      <div class="toggle" role="group" aria-label="Billing period"><button type="button" data-period="month" aria-pressed="false">Monthly</button><button type="button" data-period="year" aria-pressed="true">Yearly <span class="save">2 months free</span></button></div>
+    </div>
+    <div class="plans">
+      <div class="plan">
+        <h3>Starter</h3><p class="who">For small teams getting organized</p>
+        <div class="price"><span data-price="29">$24.17</span> <small>/ technician / mo</small></div>
+        <div class="billed" data-billed="29">billed yearly ($290 per technician)</div>
+        <a href="mailto:sales@aventratech.org?subject=Aventra%20ITSM%20Starter" class="btn btn-outline btn-block">Contact sales</a>
+        <ul><li>Incidents &amp; service requests</li><li>Self-service portal &amp; catalog</li><li>Knowledge base</li><li>SLA timers &amp; breach alerts</li><li>CSAT surveys</li><li>Email-to-ticket</li><li>Unlimited requesters</li></ul>
+      </div>
+      <div class="plan rec">
+        <span class="popular">Most popular</span>
+        <h3>Pro</h3><p class="who">For MSPs and growing IT teams</p>
+        <div class="price"><span data-price="59">$49.17</span> <small>/ technician / mo</small></div>
+        <div class="billed" data-billed="59">billed yearly ($590 per technician)</div>
+        <a href="#download" class="btn btn-primary btn-block">⬇ Download free trial</a>
+        <ul><li>Everything in Starter</li><li>Problem management</li><li>Change management &amp; CAB</li><li>CMDB &amp; impact analysis</li><li>AI assist</li><li>Reports &amp; scorecards</li><li>Aventra self-healing integration</li></ul>
+      </div>
+      <div class="plan">
+        <h3>On-prem / Enterprise</h3><p class="who">Run it on your own Windows server</p>
+        <div class="price">Custom</div>
+        <div class="billed">annual license</div>
+        <a href="mailto:sales@aventratech.org?subject=Aventra%20ITSM%20on-prem%20license" class="btn btn-outline btn-block">Talk to sales</a>
+        <ul><li>Everything in Pro</li><li>Windows installer with built-in database</li><li>No cloud dependency</li><li>Signed offline license</li><li>30-day free trial</li><li>Priority support &amp; onboarding</li></ul>
+      </div>
+    </div>
+    <p class="price-foot">Prices in USD, excluding applicable taxes.</p>
+    <div class="scroll"><table class="compare">
+      <thead><tr><th>Feature</th><th>Starter</th><th>Pro</th></tr></thead>
+      <tbody>
+        <tr><td>Incident &amp; request management</td><td class="y">✓</td><td class="y">✓</td></tr>
+        <tr><td>Self-service portal &amp; service catalog</td><td class="y">✓</td><td class="y">✓</td></tr>
+        <tr><td>Knowledge base with suggestions</td><td class="y">✓</td><td class="y">✓</td></tr>
+        <tr><td>SLAs, CSAT, email-to-ticket, dashboards</td><td class="y">✓</td><td class="y">✓</td></tr>
+        <tr><td>Problem management</td><td class="n">—</td><td class="y">✓</td></tr>
+        <tr><td>Change management with CAB approvals</td><td class="n">—</td><td class="y">✓</td></tr>
+        <tr><td>CMDB &amp; impact analysis</td><td class="n">—</td><td class="y">✓</td></tr>
+        <tr><td>AI triage, suggested fixes &amp; draft replies</td><td class="n">—</td><td class="y">✓</td></tr>
+        <tr><td>Reports &amp; per-customer scorecards</td><td class="n">—</td><td class="y">✓</td></tr>
+        <tr><td>Aventra self-healing integration</td><td class="n">—</td><td class="y">✓</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ═══ DOWNLOAD ═══ -->
+<section class="section alt" id="download">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Download for Windows</div>
+      <h2>Get <em>Aventra ITSM</em></h2>
+      <p>Run the whole service desk on your own Windows server, and give technicians a desktop app with live notifications.</p>
+    </div>
+    <div class="dl-grid">
+      <article class="dl main">
+        <div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg></div>
+        <h3>Aventra ITSM Server</h3>
+        <p class="for">For IT teams and MSPs who want it on-premises</p>
+        <ul>
+          <li>Incidents, requests, problems, changes, CMDB and knowledge base</li>
+          <li>Runs as a Windows service with its own built-in database</li>
+          <li>Your team uses it in any browser at <code>http://&lt;server&gt;:8080</code></li>
+          <li>30-day free trial, then activate a license</li>
+        </ul>
+        <div class="bottom">
+          <a href="/downloads/AventraITSM-Server-Setup.exe" class="btn btn-primary btn-lg btn-block" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>Download server installer</a>
+          <div class="meta">Windows Server 2019+ / Windows 10–11 · 64-bit · ~80 MB</div>
+        </div>
+      </article>
+      <article class="dl">
+        <div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div>
+        <h3>Aventra Service Desk</h3>
+        <p class="for">Desktop app for technicians and requesters</p>
+        <ul>
+          <li>Connects to your Aventra ITSM server (cloud version coming soon)</li>
+          <li>Windows notifications for assignments, replies, approvals and SLA warnings</li>
+          <li>Tray icon with unread count and optional start at sign-in</li>
+          <li>Free for everyone on your team</li>
+        </ul>
+        <div class="bottom">
+          <a href="/downloads/AventraServiceDesk-Setup.exe" class="btn btn-outline btn-lg btn-block" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>Download desktop app</a>
+          <div class="meta">Windows 10–11 · 64-bit · ~80 MB</div>
+        </div>
+      </article>
+    </div>
+
+    <div class="steps">
+      <div><h4>Install the server</h4><ol><li>Right-click the installer and choose <strong>Run as administrator</strong>.</li><li>Keep port 8080 (or pick another) and finish the wizard.</li><li>Open <code>http://localhost:8080</code> and create your workspace.</li></ol></div>
+      <div><h4>Connect the desktop app</h4><ol><li>Install and open <strong>Aventra Service Desk</strong>.</li><li>Enter <code>http://&lt;server&gt;:8080</code>.</li><li>Sign in. Notifications arrive even when the window is closed.</li></ol></div>
+      <div><h4>Licensing</h4><ul><li>The server includes a 30-day trial with all Pro features.</li><li>To buy or renew a license, email <a href="mailto:sales@aventratech.org?subject=Aventra%20ITSM%20license">sales@aventratech.org</a>.</li><li>End users (requesters) are always free.</li></ul></div>
+    </div>
+
+    <p class="note"><strong>Windows SmartScreen:</strong> if Windows shows “Windows protected your PC”, click <strong>More info → Run anyway</strong>. You can verify each file against the published <a href="/downloads/SHA256SUMS.txt">SHA-256 checksums</a> (in PowerShell: <code>Get-FileHash .\AventraITSM-Server-Setup.exe</code>).</p>
+  </div>
+</section>
+
+<!-- ═══ FAQ ═══ -->
+<section class="section" id="faq">
+  <div class="container">
+    <div class="section-head center"><div class="eyebrow">FAQ</div><h2>Questions</h2></div>
+    <div class="faq">
+      <details open><summary>Who counts as a technician?</summary><p>Anyone who works tickets: agents and admins. People who raise tickets through the portal or by email are free and unlimited.</p></details>
+      <details><summary>What do I need to install the server?</summary><p>A 64-bit Windows Server 2019+ or Windows 10/11 machine with 4 GB RAM and 10 GB free disk. The installer includes everything else, including the database, and sets it up as Windows services that start automatically.</p></details>
+      <details><summary>Is there a cloud version?</summary><p>It's coming soon, and the same product will run hosted for you. <a href="mailto:sales@aventratech.org?subject=Aventra%20ITSM%20cloud%20early%20access">Email us</a> for early access.</p></details>
+      <details><summary>What happens when the trial ends?</summary><p>The service desk becomes read-only. Nothing is deleted, and activating a license picks up exactly where you left off.</p></details>
+      <details><summary>How is this different from ServiceNow?</summary><p>Aventra ITSM covers the core ITSM processes MSPs and mid-size IT teams use every day, sets up in minutes instead of months, and adds self-healing automation. It costs a fraction of the per-seat price, and there's no implementation partner to hire.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CTA ═══ -->
+<section class="cta">
+  <div class="container">
+    <h2>See it on your own tickets</h2>
+    <p>Install it on a Windows server in about ten minutes, or book a walkthrough with our team.</p>
+    <div class="actions">
+      <a href="#download" class="btn btn-white btn-lg">⬇ Download free trial</a>
+      <a href="mailto:sales@aventratech.org?subject=Aventra%20ITSM%20demo" class="btn btn-outline btn-lg">Book a demo</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <p>© 2026 Aventra Tech · aventratech.org</p>
+    <div class="links"><a href="/">Home</a><a href="/managed-services.html">Managed Services</a><a href="/itsm.html">ITSM</a><a href="#download">Downloads</a><a href="mailto:sales@aventratech.org">sales@aventratech.org</a></div>
+  </div>
+</footer>
+
+<script>
+  // Mobile menu
+  var t = document.getElementById('nav-toggle'), links = document.getElementById('nav-links');
+  t.addEventListener('click', function () { var o = links.classList.toggle('open'); t.setAttribute('aria-expanded', String(o)); });
+  links.addEventListener('click', function (e) { if (e.target.tagName === 'A') { links.classList.remove('open'); t.setAttribute('aria-expanded', 'false'); } });
+  // Monthly / yearly toggle (yearly = 10 × monthly)
+  function money(n) { return '$' + (Number.isInteger(n) ? n : n.toFixed(2)); }
+  function render(yearly) {
+    document.querySelectorAll('[data-price]').forEach(function (el) { var m = +el.getAttribute('data-price'); el.textContent = money(yearly ? Math.round(m * 1000 / 12) / 100 : m); });
+    document.querySelectorAll('[data-billed]').forEach(function (el) { var m = +el.getAttribute('data-billed'); el.textContent = yearly ? 'billed yearly (' + money(m * 10) + ' per technician)' : 'billed monthly'; });
+    document.querySelectorAll('[data-period]').forEach(function (b) { b.setAttribute('aria-pressed', String((b.getAttribute('data-period') === 'year') === yearly)); });
+  }
+  document.querySelectorAll('[data-period]').forEach(function (b) { b.addEventListener('click', function () { render(b.getAttribute('data-period') === 'year'); }); });
+  render(true);
+</script>
+</body>
+</html>

@@ -23,7 +23,10 @@ export async function api(method, path, body) {
   }
   const ct = r.headers.get('content-type') || '';
   const data = ct.includes('json') ? await r.json() : await r.text();
-  if (!r.ok) throw new ApiError(r.status, data?.error || `Request failed (${r.status})`, data?.details);
+  if (!r.ok) {
+    if (r.status === 402 && data?.details?.code === 'subscription_required') window.dispatchEvent(new CustomEvent('billing-changed'));
+    throw new ApiError(r.status, data?.error || `Request failed (${r.status})`, data?.details);
+  }
   return data;
 }
 export const get = (p) => api('GET', p);

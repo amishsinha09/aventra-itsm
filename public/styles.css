@@ -283,3 +283,48 @@ td.nowrap, .nowrap { white-space: nowrap; }
 
 .star { background: none; border: 0; font-size: 28px; cursor: pointer; color: var(--line-2); padding: 0 2px; line-height: 1; }
 .star.on, .star:hover { color: #c98500; }
+
+/* ---------- Billing & pricing ---------- */
+.banner { padding: 9px 24px; font-size: 13.5px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+.banner.info { background: var(--accent-soft); color: var(--ink); }
+.banner.warn { background: var(--warning-soft); color: var(--ink); }
+.banner.bad { background: var(--critical-soft); color: var(--ink); }
+.banner .btn { margin-left: auto; }
+.notice { padding: 10px 12px; border-radius: 8px; font-size: 13.5px; }
+.notice.warn { background: var(--warning-soft); } .notice.bad { background: var(--critical-soft); }
+.pro-tag { font-size: 9.5px; font-weight: 800; letter-spacing: .06em; padding: 1px 6px; border-radius: 4px; background: linear-gradient(135deg, #2a78d6, #1baf7a); color: #fff; }
+.big { font-size: 22px; font-weight: 650; }
+.price-card { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+.price-card.rec { border: 2px solid var(--accent); box-shadow: var(--shadow); }
+.rec-tag { position: absolute; top: -11px; left: 22px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 10px; }
+.price { margin-top: 8px; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.price .amt { font-size: 38px; font-weight: 700; letter-spacing: -.02em; }
+.price .per { color: var(--ink-2); font-size: 13px; }
+.checks { list-style: none; padding: 0; margin: 0; display: grid; gap: 7px; font-size: 13.5px; }
+.checks li { padding-left: 22px; position: relative; }
+.checks li::before { content: "✓"; position: absolute; left: 0; color: var(--good-ink); font-weight: 700; }
+.yes { color: var(--good-ink); font-weight: 700; }
+.mkt { max-width: 1120px; margin: 0 auto; padding: 0 20px 40px; }
+.mkt-nav { display: flex; align-items: center; gap: 18px; padding: 18px 0; }
+.mkt-nav .brand { font-size: 16px; }
+.mkt-hero { text-align: center; padding: 36px 0 26px; }
+.mkt-hero h1 { font-size: 38px; letter-spacing: -.02em; max-width: 760px; margin: 0 auto 12px; }
+.mkt-hero p { color: var(--ink-2); font-size: 16px; max-width: 640px; margin: 0 auto 22px; }
+.price-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: start; }
+.mkt-section { margin-top: 44px; }
+.mkt-section h2 { font-size: 22px; margin-bottom: 14px; }
+.faq details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; }
+.faq summary { cursor: pointer; font-weight: 600; }
+.faq p { color: var(--ink-2); margin: 8px 0 0; }
+.mkt-foot { margin-top: 40px; text-align: center; }
+@media (max-width: 900px) { .price-grid { grid-template-columns: 1fr; } .mkt-hero h1 { font-size: 28px; } .banner { padding: 9px 16px; } }
+
+.ms-btn { width: 100%; justify-content: center; gap: 10px; margin-bottom: 4px; }
+.or { display: flex; align-items: center; gap: 10px; color: var(--ink-3); font-size: 12px; margin: 12px 0; }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.notice.ok { background: var(--good-soft); }
+.steps-list { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 4px; font-size: 13px; }
+.steps-list li.ok > span:first-child { color: var(--good-ink); font-weight: 700; }
+.steps-list li.bad > span:first-child { color: var(--critical); font-weight: 700; }
+code.big-link { font-size: 14px; padding: 3px 8px; }
+#ssoError { margin-bottom: 12px; }

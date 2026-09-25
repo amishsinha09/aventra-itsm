@@ -18,7 +18,8 @@ export async function seed({ slug = 'demo', quiet = false } = {}) {
 
   await tx(async (d) => {
     const { tenant, user: admin, groups } = await provisionTenant(d, { name: 'Northwind MSP', slug, admin: { email: 'admin@northwind.example', name: 'Amish Sinha', password_hash: pw } });
-    await d.query('UPDATE tenants SET slug=$2 WHERE id=$1', [tenant.id, slug]);
+    // Demo workspace is complimentary so it never locks
+    await d.query(`UPDATE tenants SET slug=$2, billing_status='comped', billing_plan='pro', seats=0 WHERE id=$1`, [tenant.id, slug]);
     const T = tenant.id;
     const mkCompany = async (name, domain) => d.one('INSERT INTO companies (tenant_id, name, domain) VALUES ($1,$2,$3) RETURNING *', [T, name, domain]);
     const acme = await mkCompany('Acme Dental Group', 'acmedental.example');

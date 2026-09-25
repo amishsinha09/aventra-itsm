@@ -2,6 +2,7 @@
 // (advisory lock ensures only one instance runs each sweep).
 import { pool } from '../db/index.js';
 import { notifyUsers, notifyGroup, chat } from './notify.js';
+import { billingSweep } from '../routes/billing.js';
 
 export async function slaSweep() {
   const c = await pool.connect();
@@ -47,5 +48,8 @@ export function startSlaJob(intervalSec) {
   const h = setInterval(run, intervalSec * 1000);
   h.unref();
   setTimeout(run, 5000).unref();
+  const billing = () => billingSweep().catch((e) => console.error('Billing sweep failed:', e.message));
+  setInterval(billing, 3600_000).unref();
+  setTimeout(billing, 15_000).unref();
   return h;
 }

@@ -1,0 +1,4 @@
+0ba75b8aa09932bf23d1e653f0be035762826aba62fb0f8e5f983a6eec48e687  AventraITSM-Server-Setup-1.0.0.exe
+0ba75b8aa09932bf23d1e653f0be035762826aba62fb0f8e5f983a6eec48e687  AventraITSM-Server-Setup.exe
+c7db63d1dd8ede0b77377761fcd59bf7e51c236067f78bda042228ef61bbee0e  AventraServiceDesk-Setup-1.0.0.exe
+c7db63d1dd8ede0b77377761fcd59bf7e51c236067f78bda042228ef61bbee0e  AventraServiceDesk-Setup.exe

@@ -17,6 +17,9 @@ import kbRoutes from './routes/kb.js';
 import adminRoutes from './routes/admin.js';
 import integrationRoutes from './routes/integrations.js';
 import dashboardRoutes from './routes/dashboard.js';
+import billingRoutes from './routes/billing.js';
+import ssoRoutes from './routes/sso.js';
+import { billingFor } from './lib/plans.js';
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
@@ -37,7 +40,7 @@ export function buildApp() {
     await one('SELECT 1 AS ok');
     return { ok: true, version: process.env.npm_package_version || '1.0.0' };
   }, { public: true });
-  for (const register of [authRoutes, ticketRoutes, cmdbRoutes, kbRoutes, adminRoutes, integrationRoutes, dashboardRoutes]) register(router);
+  for (const register of [authRoutes, ticketRoutes, cmdbRoutes, kbRoutes, adminRoutes, integrationRoutes, dashboardRoutes, billingRoutes, ssoRoutes]) register(router);
 
   const apiLimit = rateLimit({ windowMs: 60_000, max: 600, key: (req) => req.user?.id ? `u:${req.user.id}` : `ip:${req.ip}` });
   const integrationLimit = rateLimit({ windowMs: 60_000, max: 1200, key: (req) => `k:${req.user?.keyId}` });
@@ -95,6 +98,7 @@ export function buildApp() {
       req.params = m.params;
       if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method)) {
         const raw = await readBody(req, url.pathname.includes('/integrations/') ? 5_000_000 : 1_000_000);
+        req.rawBody = raw; // Stripe webhook signatures are computed over the exact bytes
         if (raw) {
           if (!/application\/json/.test(req.headers['content-type'] || '')) throw new HttpError(415, 'Content-Type must be application/json');
           try { req.body = JSON.parse(raw); } catch { throw new HttpError(400, 'Invalid JSON'); }
@@ -106,6 +110,11 @@ export function buildApp() {
           integrationLimit(req);
           if (!url.pathname.startsWith('/api/integrations/')) throw new HttpError(403, 'API keys can only call integration endpoints');
         } else apiLimit(req);
+        // Expired trial / ended subscription: everything stays readable, changes are blocked (except billing & sign-in)
+        if (config.billingMode !== 'off' && req.method !== 'GET' && !/^\/api\/(auth|billing|license|notifications)\b/.test(url.pathname)) {
+          const b = await billingFor(req.user.tenant_id);
+          if (b.readOnly) throw new HttpError(402, b.message || 'Subscription required', { code: 'subscription_required' });
+        }
       }
       let out;
       for (const h of m.handlers) out = await h(req, res);

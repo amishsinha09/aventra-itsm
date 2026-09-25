@@ -38,6 +38,21 @@ export const config = {
   // true | false | first (only until the first workspace exists — used by on-prem installs)
   allowSignup: env.ALLOW_SIGNUP === 'first' ? 'first' : env.ALLOW_SIGNUP !== 'false',
   edition: env.ITSM_EDITION || 'cloud', // cloud | onprem
+  // Billing: 'stripe' (cloud SaaS) | 'license' (on-prem) | 'off' (dev/self-hosted, everything unlocked)
+  billingMode: env.BILLING_MODE || (env.ITSM_EDITION === 'onprem' ? 'license' : (env.STRIPE_SECRET_KEY ? 'stripe' : 'off')),
+  stripeKey: env.STRIPE_SECRET_KEY || '',
+  stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET || '',
+  stripeApiBase: env.STRIPE_API_BASE || 'https://api.stripe.com',
+  stripeAutomaticTax: env.STRIPE_AUTOMATIC_TAX === 'true',
+  stripePrices: {
+    starter: { month: env.STRIPE_PRICE_STARTER_MONTHLY || '', year: env.STRIPE_PRICE_STARTER_ANNUAL || '' },
+    pro: { month: env.STRIPE_PRICE_PRO_MONTHLY || '', year: env.STRIPE_PRICE_PRO_ANNUAL || '' },
+  },
+  // Display prices (USD per technician per month); keep in sync with the Stripe prices
+  priceStarter: parseFloat(env.PRICE_STARTER || '29'),
+  pricePro: parseFloat(env.PRICE_PRO || '59'),
+  salesEmail: env.SALES_EMAIL || 'sales@aventratech.org',
+  marketingUrl: env.MARKETING_URL || 'https://aventratech.org',
   // Secure cookies need HTTPS. Default: on in production; on-prem LAN installs over HTTP set COOKIE_SECURE=false.
   cookieSecure: env.COOKIE_SECURE ? env.COOKIE_SECURE === 'true' : isProd,
 };

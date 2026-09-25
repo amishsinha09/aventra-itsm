@@ -1,6 +1,6 @@
 {
   "name": "aventra-itsm",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Aventra ITSM \u2014 incident, request, problem, change, CMDB and knowledge management with self-healing automation",
   "type": "module",
   "main": "src/server.js",
@@ -14,7 +14,9 @@
     "test": "node --test --test-concurrency=1 test/*.test.js",
     "test:builtin": "DB_DRIVER=builtin node --test --test-concurrency=1 test/*.test.js",
     "test:e2e": "node test/ui.e2e.mjs",
-    "check:integrations": "node scripts/check-integrations.js"
+    "check:integrations": "node scripts/check-integrations.js",
+    "stripe:setup": "node scripts/stripe-setup.js",
+    "license": "node scripts/license.js"
   },
   "license": "UNLICENSED",
   "private": true,

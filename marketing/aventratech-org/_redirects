@@ -1,0 +1,7 @@
+/home              /            301
+/login             /console.html 301
+/dashboard         /console.html 301
+/managed-services  /managed-services.html 301
+/ai-studio        /ai-studio.html            301
+/itsm              /itsm.html                 301
+/itsm/download     /itsm.html#download        301

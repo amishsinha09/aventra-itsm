@@ -4,11 +4,15 @@ import { ticketListView, ticketNewView, ticketDetailView, approvalsView } from '
 import { cmdbListView, cmdbDetailView } from './views-cmdb.js';
 import { kbListView, kbArticleView, kbEditView, catalogView, catalogOrderView, portalHomeView } from './views-kb.js';
 import { adminView } from './views-admin.js';
+import { pricingView, billingBanner, upgradeCard } from './views-billing.js';
 import { loginView, signupView, forgotView, resetView } from './views-auth.js';
 
 export const state = { me: null, meta: null, cache: {}, query: new URLSearchParams() };
 export const isStaff = () => ['admin', 'agent'].includes(state.me?.user.role);
 export const isAdmin = () => state.me?.user.role === 'admin';
+export const hasFeature = (f) => !state.me?.billing || state.me.billing.features.includes(f);
+// Pages that belong to Pro — show an upgrade card instead of an error when the plan doesn't include them
+const FEATURE_ROUTES = { '^/(list|new)/problem': 'problems', '^/(list|new)/change': 'changes', '^/cmdb': 'cmdb', '^/reports': 'reports' };
 
 // Cached lookups used by forms (invalidate with state.cache = {})
 export async function lookup(name) {
@@ -21,6 +25,7 @@ const routes = [
   [/^\/login$/, loginView, { public: true }],
   [/^\/signup$/, signupView, { public: true }],
   [/^\/forgot$/, forgotView, { public: true }],
+  [/^\/pricing$/, pricingView, { public: true }],
   [/^\/reset$/, resetView, { public: true }],
   [/^\/dashboard$/, dashboardView, { staff: true }],
   [/^\/work$/, workView, { staff: true }],
@@ -44,21 +49,21 @@ const routes = [
 
 const NAV_STAFF = [
   ['Service desk', [['#/dashboard', 'Dashboard', '▦'], ['#/work', 'My work', '◉'], ['#/approvals', 'Approvals', '✓', 'pendingApprovals']]],
-  ['Tickets', [['#/list/incident', 'Incidents', '⚠'], ['#/list/request', 'Requests', '✉'], ['#/list/problem', 'Problems', '⚙'], ['#/list/change', 'Changes', '⇄']]],
-  ['Assets & knowledge', [['#/cmdb', 'CMDB', '▣'], ['#/kb', 'Knowledge', '📖'], ['#/catalog', 'Service catalog', '🛒']]],
-  ['Insights', [['#/reports', 'Reports & CSAT', '📈']]],
+  ['Tickets', [['#/list/incident', 'Incidents', '⚠'], ['#/list/request', 'Requests', '✉'], ['#/list/problem', 'Problems', '⚙', null, 'problems'], ['#/list/change', 'Changes', '⇄', null, 'changes']]],
+  ['Assets & knowledge', [['#/cmdb', 'CMDB', '▣', null, 'cmdb'], ['#/kb', 'Knowledge', '📖'], ['#/catalog', 'Service catalog', '🛒']]],
+  ['Insights', [['#/reports', 'Reports & CSAT', '📈', null, 'reports']]],
 ];
 const NAV_REQ = [['Self-service', [['#/home', 'Home', '⌂'], ['#/my', 'My tickets', '☰'], ['#/catalog', 'Request something', '🛒'], ['#/kb', 'Knowledge', '📖'], ['#/approvals', 'Approvals', '✓', 'pendingApprovals']]]];
 
 function renderShell() {
   const app = document.getElementById('app');
   const { user, tenant } = state.me;
-  const nav = isStaff() ? [...NAV_STAFF, ...(isAdmin() ? [['Administration', [['#/admin/users', 'Settings', '⚙']]]] : [])] : NAV_REQ;
+  const nav = isStaff() ? [...NAV_STAFF, ...(isAdmin() ? [['Administration', [['#/admin/billing', 'Billing', '💳'], ['#/admin/users', 'Settings', '⚙']]]] : [])] : NAV_REQ;
   app.innerHTML = String(html`<div class="shell">
     <aside class="sidebar" id="sidebar">
       <div class="brand"><div class="brand-mark">A</div><div>Aventra ITSM<small>${tenant.name}</small></div></div>
-      <nav class="nav">${nav.map(([sec, links]) => html`<div class="nav-section">${sec}</div>${links.map(([href, text, ico, countKey]) => html`
-        <a href="${href}" data-nav><span><span aria-hidden="true" style="display:inline-block;width:20px;opacity:.8">${ico}</span>${text}</span>${countKey && state.me[countKey] ? html`<span class="count">${state.me[countKey]}</span>` : ''}</a>`)}`)}
+      <nav class="nav">${nav.map(([sec, links]) => html`<div class="nav-section">${sec}</div>${links.map(([href, text, ico, countKey, feature]) => html`
+        <a href="${href}" data-nav><span><span aria-hidden="true" style="display:inline-block;width:20px;opacity:.8">${ico}</span>${text}</span>${countKey && state.me[countKey] ? html`<span class="count">${state.me[countKey]}</span>` : ''}${feature && !hasFeature(feature) ? html`<span class="pro-tag">PRO</span>` : ''}</a>`)}`)}
       </nav>
       <div class="spacer"></div>
       ${isStaff() ? html`<a class="btn primary" href="#/new/incident" style="justify-content:center;margin:8px">+ New incident</a>` : html`<a class="btn primary" href="#/new/incident" style="justify-content:center;margin:8px">Report an issue</a>`}
@@ -74,9 +79,10 @@ function renderShell() {
             <div class="small muted" style="padding:6px 10px">${user.email}<br>Workspace: <strong>${tenant.slug}</strong></div>
             <button data-theme-set="light">☀ Light theme</button><button data-theme-set="dark">☾ Dark theme</button><button data-theme-set="">⚙ System theme</button>
             <button id="tzBtn">🕒 Time zone: ${tzAbbr()} <span class="faint small">${state.me.timezone}</span></button>
-            <button id="pwBtn">Change password</button><button id="logout">Sign out</button>
+            ${user.authSource && user.authSource !== 'local' ? '' : html`<button id="pwBtn">Change password</button>`}<button id="logout">Sign out</button>
           </div></div>
       </header>
+      <div id="billingBanner">${billingBanner()}</div>
       <main class="content" id="view"></main>
     </div>
   </div>`);
@@ -97,7 +103,7 @@ function renderShell() {
       onSubmit: (d) => patch('/api/auth/profile', { timezone: d.timezone || null }) });
     if (r) { state.me = null; toast('Time zone updated'); document.getElementById('app').innerHTML = ''; route(); }
   };
-  $('pwBtn').onclick = () => import('./views-auth.js').then((m) => m.changePassword());
+  if ($('pwBtn')) $('pwBtn').onclick = () => import('./views-auth.js').then((m) => m.changePassword());
   document.querySelectorAll('[data-theme-set]').forEach((b) => b.addEventListener('click', () => setTheme(b.dataset.themeSet)));
   $('bell').onclick = async (e) => {
     e.stopPropagation();
@@ -158,16 +164,18 @@ async function route() {
   } else if (!document.getElementById('view')) renderShell();
   if (!view) { location.hash = isStaff() ? '#/dashboard' : '#/home'; return; }
   if ((opts.staff && !isStaff()) || (opts.admin && !isAdmin())) { location.hash = isStaff() ? '#/dashboard' : '#/home'; return; }
+  const gated = Object.entries(FEATURE_ROUTES).find(([re]) => new RegExp(re).test(path));
 
   document.querySelectorAll('[data-nav]').forEach((a) => {
     const href = a.getAttribute('href').slice(1);
-    a.classList.toggle('active', path === href || (href.startsWith('/admin') && path.startsWith('/admin')) || (href.startsWith('/kb') && path.startsWith('/kb')) || (href === '/cmdb' && path.startsWith('/cmdb')));
+    a.classList.toggle('active', path === href || (href === '/admin/users' && path.startsWith('/admin') && path !== '/admin/billing') || (href.startsWith('/kb') && path.startsWith('/kb')) || (href === '/cmdb' && path.startsWith('/cmdb')));
   });
   document.getElementById('sidebar')?.classList.remove('open');
   const holder = document.getElementById('view');
   const el = document.createElement('div'); // fresh node per view so delegated listeners never leak
   el.innerHTML = String(html`<div class="empty faint">Loading…</div>`);
   holder.replaceChildren(el);
+  if (gated && !hasFeature(gated[1])) { upgradeCard(el, gated[1]); return; }
   try {
     await view(el, ...match.slice(1));
     if (my === rendering) window.scrollTo(0, 0);
@@ -187,4 +195,8 @@ export async function refreshBadges() {
 }
 
 window.addEventListener('hashchange', route);
+// A 402 "subscription required" means billing state changed under us — refresh the banner
+window.addEventListener('billing-changed', async () => {
+  try { await refreshMe(); const b = document.getElementById('billingBanner'); if (b) b.innerHTML = String(billingBanner()); } catch { /* ignore */ }
+});
 route();

@@ -1,0 +1,44 @@
+# Aventra ITSM product site — itsm.aventratech.org
+# Deploy: drag this folder onto app.netlify.com/drop (or connect the repo with "Base directory: site").
+[build]
+  publish = "."
+
+# Short, branded download links that always point at the newest GitHub release.
+# Change "amishsinha09/aventra-downloads" here if the downloads repo moves.
+[[redirects]]
+  from = "/download/server"
+  to = "https://github.com/amishsinha09/aventra-downloads/releases/latest/download/AventraITSM-Server-Setup.exe"
+  status = 302
+  force = true
+[[redirects]]
+  from = "/download/desktop"
+  to = "https://github.com/amishsinha09/aventra-downloads/releases/latest/download/AventraServiceDesk-Setup.exe"
+  status = 302
+  force = true
+[[redirects]]
+  from = "/download/checksums"
+  to = "https://github.com/amishsinha09/aventra-downloads/releases/latest/download/SHA256SUMS.txt"
+  status = 302
+  force = true
+[[redirects]]
+  from = "/downloads"
+  to = "/download/"
+  status = 301
+[[redirects]]
+  from = "/pricing"
+  to = "/#pricing"
+  status = 301
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"

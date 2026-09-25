@@ -6,3 +6,4 @@ dist/
 packaging/server/build/
 packaging/server/stage/
 desktop/node_modules/
+keys/

@@ -1,7 +1,13 @@
 import { tx, one, many, q } from '../db/index.js';
 import { bad, notFound } from '../lib/http.js';
 import { validate, str, int, oneOf, obj } from '../lib/validate.js';
-import { staffOnly, adminOnly, audit } from '../lib/auth.js';
+import { staffOnly as staffOnlyBase, adminOnly as adminOnlyBase, audit } from '../lib/auth.js';
+import { requireFeature } from '../lib/plans.js';
+
+// Every CMDB endpoint is a Pro feature
+const cmdbFeature = requireFeature('cmdb');
+const staffOnly = async (req) => { staffOnlyBase(req); await cmdbFeature(req); };
+const adminOnly = async (req) => { adminOnlyBase(req); await cmdbFeature(req); };
 
 export const CI_CLASSES = ['server', 'workstation', 'laptop', 'network', 'application', 'database', 'service', 'cloud', 'storage', 'mobile', 'printer'];
 export const CI_STATUSES = ['operational', 'degraded', 'down', 'maintenance', 'retired'];

@@ -1,9 +1,11 @@
-import { tx, one, many, q } from '../db/index.js';
+import { tx, one, many, q, db } from '../db/index.js';
 import { bad, notFound, forbidden } from '../lib/http.js';
 import { validate, str, int, oneOf, bool, arr, email, obj } from '../lib/validate.js';
 import { staffOnly, adminOnly, audit, hashPassword, passwordProblem, newApiKey } from '../lib/auth.js';
 import { CATEGORIES } from '../lib/itsm.js';
 import { isTimeZone } from './auth.js';
+import { assertSeatAvailable } from '../lib/plans.js';
+import { sendInvite } from '../lib/provision.js';
 
 export default function (r) {
   // ---- Users
@@ -12,17 +14,18 @@ export default function (r) {
     if (['admin', 'agent', 'requester'].includes(req.query.role)) { params.push(req.query.role); extra += ` AND u.role = $${params.length}`; }
     if (req.query.staff === 'true') extra += ` AND u.role IN ('admin','agent')`;
     if (req.query.q) { params.push(`%${req.query.q.slice(0, 100).replace(/[%_\\]/g, '\\$&')}%`); extra += ` AND (u.name ILIKE $${params.length} OR u.email ILIKE $${params.length})`; }
-    return many(`SELECT u.id, u.name, u.email, u.role, u.active, u.company_id, c.name AS company_name, u.last_login_at, u.created_at
+    return many(`SELECT u.id, u.name, u.email, u.role, u.active, u.company_id, c.name AS company_name, u.last_login_at, u.created_at, u.auth_source, u.invited_at, (u.password_hash IS NOT NULL) AS has_password
       FROM users u LEFT JOIN companies c ON c.id = u.company_id WHERE u.tenant_id = $1 ${extra} ORDER BY u.name LIMIT 500`, params);
   });
 
   r.post('/api/users', adminOnly, async (req, res) => {
     const b = validate({ name: str({ required: true, max: 120 }), email: email({ required: true, max: 200 }), role: oneOf(['admin', 'agent', 'requester'], { required: true }),
-      company_id: int(), password: str({ max: 200 }), group_ids: arr(int(), { max: 50 }) }, req.body);
+      company_id: int(), password: str({ max: 200 }), group_ids: arr(int(), { max: 50 }), invite: bool() }, req.body);
     if (b.password) { const e = passwordProblem(b.password); if (e) throw bad(e); }
     if (b.company_id && !(await one('SELECT 1 FROM companies WHERE tenant_id=$1 AND id=$2', [req.user.tenant_id, b.company_id]))) throw bad('Company not found');
     const hash = b.password ? await hashPassword(b.password) : null;
     const u = await tx(async (d) => {
+      if (b.role !== 'requester') await assertSeatAvailable(d, req.user.tenant_id);
       const u = await d.one(`INSERT INTO users (tenant_id, company_id, email, name, role, password_hash) VALUES ($1,$2,$3,$4,$5,$6)
         RETURNING id, name, email, role, company_id, active`, [req.user.tenant_id, b.company_id ?? null, b.email, b.name, b.role, hash]);
       for (const g of b.group_ids || []) {
@@ -32,6 +35,8 @@ export default function (r) {
       return u;
     });
     await audit(req, 'user.create', 'user', u.id, { email: u.email, role: u.role });
+    // Invite by default when no password was set: email a set-password link (or directory sign-in instructions)
+    if (b.invite !== false && !b.password) u.invite = await sendInvite(req.user.tenant_id, { ...u, password_hash: null }, req.user.name);
     res.statusCode = 201;
     return u;
   });
@@ -43,8 +48,12 @@ export default function (r) {
     if (b.company_id && !(await one('SELECT 1 FROM companies WHERE tenant_id=$1 AND id=$2', [req.user.tenant_id, b.company_id]))) throw bad('Company not found');
     if (b.password) { const e = passwordProblem(b.password); if (e) throw bad(e); b.password_hash = await hashPassword(b.password); delete b.password; }
     if (!Object.keys(b).length) throw bad('Nothing to update');
-    const cur = await one('SELECT role FROM users WHERE tenant_id=$1 AND id=$2', [req.user.tenant_id, id]);
+    const cur = await one('SELECT role, active FROM users WHERE tenant_id=$1 AND id=$2', [req.user.tenant_id, id]);
     if (!cur) throw notFound('User not found');
+    // Becoming (or re-activating) a technician needs a free seat
+    const willBeStaff = (b.role ?? cur.role) !== 'requester' && (b.active ?? cur.active);
+    const wasStaff = cur.role !== 'requester' && cur.active;
+    if (willBeStaff && !wasStaff) await assertSeatAvailable(db, req.user.tenant_id, { excludeUserId: id });
     if (b.password_hash || b.active === false || (b.role && b.role !== cur.role)) b.sessions_valid_after = new Date(); // force re-login
     const cols = Object.keys(b);
     const u = await one(`UPDATE users SET ${cols.map((k, i) => `${k}=$${i + 3}`).join(',')}  WHERE tenant_id=$1 AND id=$2

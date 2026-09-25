@@ -44,6 +44,22 @@ async function main() {
       const { seed } = await import('./db/seed.js'); const { pool } = await import('./db/index.js');
       await seed(); await pool.end(); return process.exit(0);
     }
+    // Operator tool: comp a workspace (e.g. your own internal one), extend a trial, or reset to trial
+    //   plan --workspace <slug> --status comped [--plan pro] [--seats 0]
+    //   plan --workspace <slug> --extend-trial 14
+    case 'plan': {
+      if (!f.workspace) throw new Error('usage: plan --workspace <slug> [--status comped|trialing] [--plan starter|pro] [--seats N] [--extend-trial DAYS]');
+      const { one: qOne, pool } = await import('./db/index.js');
+      const sets = []; const vals = [f.workspace];
+      if (f.status) { if (!['comped', 'trialing', 'active', 'canceled'].includes(f.status)) throw new Error('bad --status'); vals.push(f.status); sets.push(`billing_status=$${vals.length}`); }
+      if (f.plan) { if (!['starter', 'pro'].includes(f.plan)) throw new Error('bad --plan'); vals.push(f.plan); sets.push(`billing_plan=$${vals.length}`); }
+      if (f.seats !== undefined) { vals.push(parseInt(f.seats, 10)); sets.push(`seats=$${vals.length}`); }
+      if (f.extendTrial) { vals.push(parseInt(f.extendTrial, 10)); sets.push(`trial_ends_at=GREATEST(trial_ends_at, now()) + ($${vals.length} || ' days')::interval, billing_status='trialing', trial_reminded_at=NULL`); }
+      if (!sets.length) throw new Error('nothing to change');
+      const t = await qOne(`UPDATE tenants SET ${sets.join(', ')} WHERE slug=$1 RETURNING slug, billing_plan, billing_status, seats, trial_ends_at`, vals);
+      if (!t) throw new Error(`workspace "${f.workspace}" not found`);
+      console.log(t); await pool.end(); return process.exit(0);
+    }
     case 'check': {
       const { runCheck } = await import('../scripts/check-integrations.js');
       return runCheck(rest);

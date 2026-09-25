@@ -6,6 +6,7 @@ import {
   TICKET_SELECT, getTicket, assertCanView, createTicket, updateTicket, addComment, decideApproval, changeConflicts, logEvent, later,
 } from '../lib/tickets.js';
 import { notifyUsers, notifyGroup } from '../lib/notify.js';
+import { requireFeature, assertFeature } from '../lib/plans.js';
 import { TICKET_TYPES, ALL_STATUSES, RESOLUTION_CODES, CATEGORIES, LIFECYCLE, PREFIX, nextNumber } from '../lib/itsm.js';
 import { suggestions, draftReply, kbFromTicket, aiEnabled } from '../lib/ai.js';
 
@@ -63,6 +64,8 @@ export default function (r) {
   }));
 
   r.get('/api/tickets', async (req) => {
+    if (req.query.type === 'problem') await assertFeature(req.user.tenant_id, 'problems');
+    if (req.query.type === 'change') await assertFeature(req.user.tenant_id, 'changes');
     const { where, params } = buildFilter(req);
     const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
@@ -136,7 +139,7 @@ export default function (r) {
   });
 
   // AI assist: draft reply + likely fix from KB and similar resolved tickets
-  r.post('/api/tickets/:id/ai/draft', staffOnly, async (req) => {
+  r.post('/api/tickets/:id/ai/draft', staffOnly, requireFeature('ai'), async (req) => {
     const t = await getTicket(db, req.user.tenant_id, +req.params.id || 0);
     if (!t) throw notFound();
     const comments = await many(`SELECT c.*, u.name AS author_name FROM ticket_comments c LEFT JOIN users u ON u.id=c.author_id WHERE ticket_id=$1 ORDER BY created_at`, [t.id]);
@@ -145,7 +148,7 @@ export default function (r) {
   });
 
   // Knowledge-centred service: turn a resolved ticket into a draft KB article
-  r.post('/api/tickets/:id/kb', staffOnly, async (req, res) => {
+  r.post('/api/tickets/:id/kb', staffOnly, requireFeature('ai'), async (req, res) => {
     const t = await getTicket(db, req.user.tenant_id, +req.params.id || 0);
     if (!t) throw notFound();
     if (!t.resolved_at) throw bad('Resolve the ticket before creating an article from it');

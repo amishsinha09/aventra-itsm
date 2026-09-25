@@ -82,7 +82,7 @@ export async function authenticate(req) {
   const token = bearer || req.cookies[SESSION_COOKIE];
   if (!token) throw new HttpError(401, 'Sign in required');
   const p = verifyToken(token);
-  if (!p) throw new HttpError(401, 'Session expired, please sign in again');
+  if (!p || p.typ) throw new HttpError(401, 'Session expired, please sign in again'); // typ marks non-session tokens (e.g. SSO state)
   const u = await one(`SELECT id, tenant_id, company_id, email, name, role, active, sessions_valid_after FROM users WHERE id = $1 AND tenant_id = $2`, [p.sub, p.tid]);
   if (!u || !u.active) throw new HttpError(401, 'Account disabled');
   if ((p.iat_ms ?? p.iat * 1000) < new Date(u.sessions_valid_after).getTime()) throw new HttpError(401, 'Session expired, please sign in again');

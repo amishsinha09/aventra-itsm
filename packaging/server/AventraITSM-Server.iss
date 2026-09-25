@@ -2,7 +2,7 @@
 ; Build: iscc /DAppVersion=1.0.0 AventraITSM-Server.iss   (after `node build.mjs` has filled .\stage)
 
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "1.1.0"
 #endif
 #define AppName "Aventra ITSM Server"
 #define DataDir "{commonappdata}\Aventra ITSM"
@@ -46,8 +46,8 @@ Name: "{#DataDir}"; Flags: uninsneveruninstall
 Name: "{#DataDir}\logs"; Flags: uninsneveruninstall
 
 [INI]
-Filename: "{group}\Aventra ITSM.url"; Section: "InternetShortcut"; Key: "URL"; String: "http://localhost:{code:GetPort}"
-Filename: "{commondesktop}\Aventra ITSM.url"; Section: "InternetShortcut"; Key: "URL"; String: "http://localhost:{code:GetPort}"
+Filename: "{group}\Aventra ITSM.url"; Section: "InternetShortcut"; Key: "URL"; String: "{code:GetShareUrl}"
+Filename: "{commondesktop}\Aventra ITSM.url"; Section: "InternetShortcut"; Key: "URL"; String: "{code:GetShareUrl}"
 Filename: "{commondesktop}\Aventra ITSM.url"; Section: "InternetShortcut"; Key: "IconFile"; String: "{app}\AventraITSM.exe"
 Filename: "{commondesktop}\Aventra ITSM.url"; Section: "InternetShortcut"; Key: "IconIndex"; String: "0"
 
@@ -71,8 +71,6 @@ Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=
 Type: files; Name: "{group}\Aventra ITSM.url"
 Type: files; Name: "{commondesktop}\Aventra ITSM.url"
 
-[Messages]
-FinishedLabel=Aventra ITSM is running as a Windows service.%n%nOpen the service desk and create your workspace and administrator account. Other computers can reach it at http://<this-server-name>:<port>.
 
 [Code]
 var
@@ -103,6 +101,11 @@ begin
     Result := PortPage.Values[0]
   else
     Result := '8080';
+end;
+
+function GetShareUrl(Param: String): String;
+begin
+  Result := 'http://' + Lowercase(GetComputerNameString()) + ':' + GetPort('');
 end;
 
 procedure InitializeWizard();
@@ -182,6 +185,25 @@ begin
   begin
     Exec(ExpandConstant('{sys}\netsh.exe'), 'advfirewall firewall delete rule name="Aventra ITSM"', '', SW_HIDE, ewWaitUntilTerminated, Code);
     Exec(ExpandConstant('{sys}\netsh.exe'), 'advfirewall firewall add rule name="Aventra ITSM" dir=in action=allow protocol=TCP localport=' + GetPort(''), '', SW_HIDE, ewWaitUntilTerminated, Code);
+  end;
+end;
+
+// Finish page: show the exact link to give everyone (this server's name + port)
+procedure CurPageChanged(CurPageID: Integer);
+var
+  Url: String;
+begin
+  if CurPageID = wpFinished then
+  begin
+    Url := 'http://' + Lowercase(GetComputerNameString()) + ':' + GetPort('');
+    WizardForm.FinishedHeadingLabel.Caption := 'Aventra ITSM is ready';
+    WizardForm.FinishedLabel.Caption :=
+      'The service desk is running as a Windows service.' + #13#10#13#10 +
+      'Share this link with everyone who will use it:' + #13#10 + '    ' + Url + #13#10#13#10 +
+      'Next: open it, create your workspace and administrator account, then go to' + #13#10 +
+      'Settings > Sign-in & access to connect Active Directory or Microsoft 365' + #13#10 +
+      'so employees can sign in with their work accounts.' + #13#10#13#10 +
+      'The link is also saved as "Aventra ITSM" on the desktop and in the Start menu.';
   end;
 end;
 
